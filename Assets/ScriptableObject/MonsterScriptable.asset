@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc20dea20c25e4f1880dc838ee7c4dad, type: 3}
+  m_Name: MonsterScriptable
+  m_EditorClassIdentifier: Assembly-CSharp::MonsterScriptable
+  m_spr_monsnter:
+  - {fileID: -6072799748536759623, guid: cb0840fed33234301860fcbf954210cb, type: 3}
+  - {fileID: -6427306702813539900, guid: da46149bd46af4efa909a8f5303b110c, type: 3}
+  - {fileID: 6255452347896402278, guid: ded689b09c12c44e09f44d1be64bd8f4, type: 3}
+  - {fileID: 1526239078128241333, guid: 6ae55dd6b8cc848b1b4c103a829f7fd8, type: 3}
+  - {fileID: 2915756464726010034, guid: ec7325d4715d64b76bc98ef6848eb52f, type: 3}
+  - {fileID: 962225834817568185, guid: c949ebfa1985c45429cd68bc413f9915, type: 3}
+  - {fileID: -2734204553302490487, guid: 9c9267216240b4941ae143c4bf6d01e4, type: 3}
+  - {fileID: -8951949797340792949, guid: 01d4edac98f254b55a5de785f320113f, type: 3}
+  - {fileID: 2474268534568235943, guid: 88585932280f7466f8e789232144a942, type: 3}
