@@ -20,10 +20,9 @@ public class SpinWheelController : MonoBehaviour
     float currentSpeed, currentDelay;
     float itemHeight;
     int currentIndex;
-
     float minDelay = 0.05f;
     float maxDelay = 1f;
-
+    float delayTime = 0f;
 
     [SerializeField] int resultSlot;
 
@@ -71,7 +70,12 @@ public class SpinWheelController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (delayTime > 0)
+            delayTime -= Time.deltaTime;
+        else
+            delayTime = 0;
+
+        if (Input.GetKeyDown(KeyCode.Space) && delayTime <= 0)
         {
             if(isStop) return;
 
@@ -82,6 +86,7 @@ public class SpinWheelController : MonoBehaviour
                 if(!isStop)
                     StopSpin();
             }
+            delayTime = 2f;
         }
         Scroll();
     }
@@ -89,21 +94,26 @@ public class SpinWheelController : MonoBehaviour
     void StartSpin()
     {
         isStart = true;
-        Debug.Log("isStart:" + isStart);
         StartCoroutine(IESpinWheel());
+        Debug.Log("Start");
+
     }
 
     void StopSpin()
     {
         isStart = false;
+        isStop = true;
+        var curIndex = currentIndex;
 
-        Debug.Log("isStop :" + isStop);
+        resultSlot = Mathf.Abs(curIndex - (listSlotItem.Count - 1)) <= listSlotItem.Count / 2
+                            ? curIndex + 3 
+                            : 0;
+        resultSlot = currentIndex -3 >= 0
+                    ? (currentIndex - 3) 
+                    : ((currentIndex - 3) + listSlotItem.Count);
+        StartCoroutine(IEStopSpin());
+        Debug.Log("Stop");
         
-    }
-
-    void Result()
-    {
-        ResetData();
     }
 
     void Scroll()
@@ -112,6 +122,7 @@ public class SpinWheelController : MonoBehaviour
         if (rectContentScroll.anchoredPosition.y >= limitItem)
         {
             rectContentScroll.anchoredPosition -= Vector2.up * limitItem;
+            return;
         }
 
         if (isStart)
@@ -131,20 +142,16 @@ public class SpinWheelController : MonoBehaviour
             currentSpeed = Mathf.MoveTowards(
                     currentSpeed,
                     0,
-                    acceleration * Time.deltaTime);
+                    acceleration  * Time.deltaTime);
 
-            currentDelay = Mathf.MoveTowards(
+            currentDelay = Mathf.Lerp(
                             currentDelay,
                             maxDelay,
                             maxDelay * Time.deltaTime);
 
-            if (currentSpeed <= acceleration && isStop)
+            if (isStop && currentSpeed <= acceleration * 2f)
             {
-                isStop = true;
-                resultSlot = UnityEngine.Random.Range(currentIndex , listSlotItem.Count -1);
-                currentSpeed  = acceleration;
-                StartCoroutine(IEStopSpin());
-                SnapToCenter(resultSlot);
+                SnapToCenter();
                 return;
             }
 
@@ -152,51 +159,46 @@ public class SpinWheelController : MonoBehaviour
         rectContentScroll.anchoredPosition += Vector2.up * currentSpeed * Time.deltaTime;
     }
 
-    void SnapToCenter(int resultIndex)
+    void SnapToCenter()
     {
-        var target = new Vector3(0, (resultIndex * itemHeight), 0);
+        var target = new Vector3(0, (resultSlot * itemHeight), 0);
         var posScroll = rectContentScroll.anchoredPosition;
-        Debug.Log($"Result : {resultIndex}, currenIndex: {currentIndex}, Result lon hon: {resultIndex >= currentIndex}");
-        
-        if (resultIndex <= currentIndex)
+        var indexItem = Mathf.RoundToInt(posScroll.y / itemHeight);
+        var limitItem = itemHeight * rectContentScroll.childCount - 1;
+
+        if (rectContentScroll.anchoredPosition.y >= limitItem)
         {
-            float limitItem = itemHeight * rectContentScroll.childCount -2;
-            if (rectContentScroll.anchoredPosition.y >= limitItem)
-            {
-                rectContentScroll.anchoredPosition -= Vector2.up * limitItem;
-                return;
-            }
-            else
-            {
-                //rectContentScroll.anchoredPosition = Vector3.MoveTowards(rectContentScroll.anchoredPosition, target, acceleration * Time.deltaTime); 
-                posScroll.y = Mathf.MoveTowards(
-                        posScroll.y,
-                        target.y,
-                        acceleration * Time.deltaTime);
-            }
+            rectContentScroll.anchoredPosition = Vector2.zero;
+            return;
+        }
+
+        var speed = currentSpeed <= acceleration * 2f ? acceleration * 2f : currentSpeed;
+
+        if (Mathf.Abs(posScroll.y - target.y) <= itemHeight * 0.5f)
+        {
+            posScroll.y = Mathf.MoveTowards(
+                            posScroll.y,
+                            target.y,
+                            speed  * Time.deltaTime);            
         }
         else
-        {                
-            //rectContentScroll.anchoredPosition = Vector3.MoveTowards(rectContentScroll.anchoredPosition, target, acceleration * Time.deltaTime);
-            posScroll.y = Mathf.MoveTowards(
-                        posScroll.y,
-                        target.y,
-                        acceleration * Time.deltaTime);
-        }
-        
-        rectContentScroll.anchoredPosition = posScroll;
-        if(Mathf.Abs(posScroll.y - target.y) < 0.1f)
         {
-            ResetData();
+            posScroll.y = Mathf.MoveTowards(
+                            posScroll.y,
+                            limitItem,
+                            speed  * Time.deltaTime);
         }
-        //rectContentScroll.anchoredPosition = Vector3.MoveTowards(rectContentScroll.anchoredPosition, target, 50f * Time.deltaTime);
+        rectContentScroll.anchoredPosition = posScroll;            
 
-        //ResetData();
+        if(Mathf.Abs(indexItem - resultSlot) == 0 && Mathf.Abs(posScroll.y - target.y) <= 0.1f && delayTime <= 0)
+        {
+            Result();
+        }
     }
 
     private IEnumerator IESpinWheel()
     {
-        while(isStart && !isStop)
+        while(isStart)
         {
             NextItem();
         
@@ -206,11 +208,10 @@ public class SpinWheelController : MonoBehaviour
 
     private IEnumerator IEStopSpin()
     {
-        while (resultSlot != currentIndex)
+        while (Mathf.Abs(resultSlot - currentIndex) != 0)
         {
-            Debug.Log("IEStopSpin");
             NextItem();
-            yield return new WaitForSeconds(currentDelay / 2f);
+            yield return new WaitForSeconds(currentDelay * 0.75f);
         }
     }
 
@@ -227,9 +228,26 @@ public class SpinWheelController : MonoBehaviour
         items[currentIndex].SetDark(false);
     }
 
+    void Result()
+    {
+        var target = new Vector3(0, (resultSlot * itemHeight), 0);
+        var posScroll = rectContentScroll.anchoredPosition;
+        while (target.y != posScroll.y)
+        {
+            posScroll.y = Mathf.MoveTowards(
+                            posScroll.y,
+                            target.y,
+                            acceleration  * Time.deltaTime);
+
+            rectContentScroll.anchoredPosition = posScroll;
+            Result();              
+        }
+
+        ResetData();
+    }
+
     void ResetData()
     {
         isStart = isStop = false;
-        currentSpeed = 0;
     }
 }
